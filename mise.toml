@@ -1,0 +1,19 @@
+[tools]
+node = "24.16.0"
+trivy = "0.71.0"
+
+[env]
+DATABASE_URL = "postgres://invoice_user:invoice_pass@localhost:5432/invoice_db"
+PORT = "3000"
+
+[tasks.start]
+description = "Install dependencies and start the application"
+run = "npm install && npm start"
+
+[tasks.test]
+description = "Run all tests and generate coverage report"
+run = "npm test"
+
+[tasks.scan-dependencies]
+description = "Scan dependencies for vulnerabilities using Trivy"
+run = "trivy fs ."

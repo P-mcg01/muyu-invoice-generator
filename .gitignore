@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+postgres_data/
+
+# Testing
+coverage/
+
+# Mise
+.mise.toml
+.mise.local.toml
+.mise.secrets.toml
+# (Note: mise.toml is usually committed, but .mise.* overrides are ignored)
+
+# Output
+*.pdf
+
+# IDE
+.vscode/
+.idea/
