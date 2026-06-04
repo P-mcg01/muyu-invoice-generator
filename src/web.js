@@ -1,9 +1,10 @@
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const { httpLogger, logger } = require('./services/logger');
 const { calculateInvoice } = require('./services/calculations');
-const { initDB, saveInvoice, pool } = require('./services/db');
+const { initDB, saveInvoice, getInvoicesByOwner, getInvoiceById, pool } = require('./services/db');
 const { generatePDF } = require('./services/pdf');
 
 const app = express();
@@ -17,6 +18,7 @@ if (!process.env.DATABASE_URL) {
 
 // Middleware
 app.use(httpLogger);
+app.use(cookieParser());
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -44,9 +46,48 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
+app.get('/past-invoices', async (req, res) => {
+  try {
+    const email = req.cookies.user_email;
+    if (!email) {
+      return res.redirect('/');
+    }
+    const invoices = await getInvoicesByOwner(email);
+    res.render('past-invoices', { invoices, email });
+  } catch (error) {
+    logger.error('Error fetching past invoices:', error);
+    res.status(500).send('An error occurred while fetching your history.');
+  }
+});
+
+app.get('/download/:id', async (req, res) => {
+  try {
+    const email = req.cookies.user_email;
+    const invoice = await getInvoiceById(req.params.id);
+
+    if (!invoice) {
+      return res.status(404).send('Invoice not found.');
+    }
+
+    if (invoice.owner_email !== email) {
+      return res.status(403).send('Unauthorized to access this invoice.');
+    }
+
+    const pdfBuffer = await generatePDF(invoice);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.id}.pdf`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    logger.error('Error downloading invoice:', error);
+    res.status(500).send('An error occurred while downloading the invoice.');
+  }
+});
+
 app.post('/generate', async (req, res) => {
   try {
     const { companyName, companyDetails, taxRate, expenses } = req.body;
+    const userEmail = req.cookies.user_email;
     
     if (!expenses) {
       return res.status(400).send('At least one expense is required.');
@@ -59,6 +100,7 @@ app.post('/generate', async (req, res) => {
     const invoice = await saveInvoice({
       companyName,
       companyDetails,
+      owner_email: userEmail,
       ...invoiceData
     });
 

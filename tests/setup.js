@@ -1,1 +1,1 @@
-process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
+process.env.DATABASE_URL = 'postgres://invoice_user:invoice_pass@localhost:5432/invoice_db';

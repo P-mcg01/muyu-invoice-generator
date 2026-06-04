@@ -13,9 +13,71 @@
         .size-6 { width: 1.5rem; height: 1.5rem; }
         .mr-2 { margin-right: 0.5rem; }
         .mr-1 { margin-right: 0.25rem; }
+        [x-cloak] { display: none !important; }
+        .modal-open { overflow: hidden !important; }
+        /* Hide modal if cookie exists (handled by blocking script) */
+        .has-cookie #email-modal { display: none !important; }
     </style>
+    <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        function setCookie(name, value, days = 30) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${date.toUTCString()};path=/`;
+        }
+
+        // Blocking check to prevent modal flash
+        if (getCookie('user_email')) {
+            document.documentElement.classList.add('has-cookie');
+        }
+    </script>
 </head>
-<body class="dark">
+<body class="dark" 
+      x-data="{ 
+        showModal: !getCookie('user_email'),
+        email: '',
+        submit() {
+            if(this.email) { 
+                setCookie('user_email', this.email); 
+                this.showModal = false; 
+                window.location.reload(); 
+            }
+        }
+      }"
+      :class="{ 'modal-open': showModal }">
+    <!-- Email Prompt Modal -->
+    <div id="email-modal"
+         x-show="showModal" 
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-12"
+         style="background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);">
+        
+        <div class="bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+             style="width: 50%; max-width: 800px;"
+             @click.away="return">
+            <div class="p-8">
+                <h2 class="text-xl mb-2 text-foreground font-semibold text-center">Welcome to Muyu</h2>
+                <p class="text-sm text-muted-foreground mb-6 text-center px-2">Please enter your email to start generating and tracking your invoices.</p>
+                <form @submit.prevent="submit">
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-foreground" for="userEmail">Email Address</label>
+                            <input class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border-border text-foreground placeholder:text-muted-foreground" 
+                                   id="userEmail" type="email" x-model="email" placeholder="your@email.com" required />
+                        </div>
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:opacity-90 h-11 px-8">
+                            Start Generating
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="flex h-screen bg-background" 
          x-data="{ 
             companyName: '', 
@@ -59,16 +121,16 @@
             <nav class="flex-1 p-4">
                 <ul class="space-y-1">
                     <li>
-                        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-primary-foreground bg-sidebar-primary hover:opacity-90 transition-opacity">
+                        <a href="/" class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-primary-foreground bg-sidebar-primary hover:opacity-90 transition-opacity">
                             <i data-lucide="file-text" class="size-4"></i>
                             <span>Create Invoice</span>
-                        </button>
+                        </a>
                     </li>
                     <li>
-                        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                        <a href="/past-invoices" class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
                             <i data-lucide="file-spreadsheet" class="size-4"></i>
                             <span>Past Invoices</span>
-                        </button>
+                        </a>
                     </li>
                     <li>
                         <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
@@ -80,7 +142,7 @@
             </nav>
 
             <div class="p-4 border-t border-sidebar-border">
-                <p class="text-xs text-muted-foreground">© 2026 Invoice Gen</p>
+                <p class="text-xs text-muted-foreground" x-text="getCookie('user_email') ? 'Logged in as: ' + getCookie('user_email') : '© 2026 Invoice Gen'"></p>
             </div>
         </aside>
 
