@@ -1,6 +1,13 @@
 const request = require('supertest');
 const { app } = require('../../src/web');
-const { saveInvoice } = require('../../src/services/db');
+const { 
+  saveInvoice, 
+  getInvoicesByOwner, 
+  getInvoiceById, 
+  getProfileByEmail, 
+  upsertProfile,
+  pool 
+} = require('../../src/services/db');
 const { generatePDF } = require('../../src/services/pdf');
 const { logger } = require('../../src/services/logger');
 
@@ -8,6 +15,10 @@ jest.mock('../../src/services/db');
 jest.mock('../../src/services/pdf');
 
 describe('API Routes', () => {
+  afterAll(async () => {
+    await pool.end();
+  });
+
   test('should have cookie-parser middleware configured', async () => {
     const hasCookieParser = app._router.stack.some(layer => layer.name === 'cookieParser');
     expect(hasCookieParser).toBe(true);
@@ -36,7 +47,6 @@ describe('API Routes', () => {
         company_details: 'Prefill Details',
         default_tax_rate: 20 
       };
-      const { getProfileByEmail } = require('../../src/services/db');
       getProfileByEmail.mockResolvedValue(mockProfile);
 
       const response = await request(app)
@@ -49,7 +59,6 @@ describe('API Routes', () => {
 
     test('should return 200 even if profile fetch fails', async () => {
       const email = 'error@test.com';
-      const { getProfileByEmail } = require('../../src/services/db');
       getProfileByEmail.mockRejectedValue(new Error('DB Error'));
       const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 
@@ -145,7 +154,6 @@ describe('API Routes', () => {
     test('should return 200 and list invoices for valid user_email', async () => {
       const email = 'history@test.com';
       const mockInvoices = [{ id: 1, company_name: 'History Co', owner_email: email }];
-      const { getInvoicesByOwner } = require('../../src/services/db');
       getInvoicesByOwner.mockResolvedValue(mockInvoices);
 
       const response = await request(app)
@@ -157,7 +165,6 @@ describe('API Routes', () => {
     });
 
     test('should return 500 if database fails', async () => {
-      const { getInvoicesByOwner } = require('../../src/services/db');
       getInvoicesByOwner.mockRejectedValue(new Error('DB Error'));
       const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 
@@ -173,7 +180,6 @@ describe('API Routes', () => {
 
   describe('GET /download/:id', () => {
     test('should return 404 if invoice not found', async () => {
-      const { getInvoiceById } = require('../../src/services/db');
       getInvoiceById.mockResolvedValue(null);
 
       const response = await request(app)
@@ -184,7 +190,6 @@ describe('API Routes', () => {
     });
 
     test('should return 403 if owner mismatch', async () => {
-      const { getInvoiceById } = require('../../src/services/db');
       getInvoiceById.mockResolvedValue({ id: 1, owner_email: 'owner@test.com' });
 
       const response = await request(app)
@@ -196,7 +201,6 @@ describe('API Routes', () => {
 
     test('should return 200 and PDF if owner matches', async () => {
       const email = 'owner@test.com';
-      const { getInvoiceById } = require('../../src/services/db');
       getInvoiceById.mockResolvedValue({ id: 1, owner_email: email, items: [] });
       generatePDF.mockResolvedValue(Buffer.from('pdf content'));
 
@@ -209,7 +213,6 @@ describe('API Routes', () => {
     });
 
     test('should return 500 if download fails', async () => {
-      const { getInvoiceById } = require('../../src/services/db');
       getInvoiceById.mockRejectedValue(new Error('DB Error'));
       const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 
@@ -232,7 +235,6 @@ describe('API Routes', () => {
 
     test('GET /settings should return 200 if user_email cookie exists', async () => {
       const email = 'settings@test.com';
-      const { getProfileByEmail } = require('../../src/services/db');
       getProfileByEmail.mockResolvedValue(null);
 
       const response = await request(app)
@@ -245,7 +247,6 @@ describe('API Routes', () => {
 
     test('POST /settings should save profile and redirect', async () => {
       const email = 'settings@test.com';
-      const { upsertProfile } = require('../../src/services/db');
       upsertProfile.mockResolvedValue({ email });
 
       const response = await request(app)
@@ -279,7 +280,6 @@ describe('API Routes', () => {
 
     test('GET /settings should return 500 if database fails', async () => {
       const email = 'error@test.com';
-      const { getProfileByEmail } = require('../../src/services/db');
       getProfileByEmail.mockRejectedValue(new Error('DB Error'));
       const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 
@@ -293,7 +293,6 @@ describe('API Routes', () => {
 
     test('POST /settings should return 500 if upsert fails', async () => {
       const email = 'error@test.com';
-      const { upsertProfile } = require('../../src/services/db');
       upsertProfile.mockRejectedValue(new Error('DB Error'));
       const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
 

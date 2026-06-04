@@ -1,8 +1,20 @@
-const { pool, saveInvoice, getInvoicesByOwner, getInvoiceById, initDB } = require('../../src/services/db');
+const { 
+  pool, 
+  saveInvoice, 
+  getInvoicesByOwner, 
+  getInvoiceById, 
+  initDB,
+  upsertProfile,
+  getProfileByEmail 
+} = require('../../src/services/db');
 
 describe('Database Ownership Queries', () => {
   beforeAll(async () => {
     await initDB();
+  });
+
+  afterAll(async () => {
+    await pool.end();
   });
 
   test('should retrieve invoices by owner email', async () => {
@@ -38,5 +50,26 @@ describe('Database Ownership Queries', () => {
     expect(result).toBeDefined();
     expect(result.id).toBe(saved.id);
     expect(result.owner_email).toBe(email);
+  });
+
+  test('should upsert and retrieve user profile', async () => {
+    const email = 'profile@test.com';
+    const profileData = {
+      email,
+      company_name: 'Default Co',
+      company_details: 'Default Address',
+      default_tax_rate: 15
+    };
+    
+    await upsertProfile(profileData);
+    const retrieved = await getProfileByEmail(email);
+    
+    expect(retrieved.company_name).toBe('Default Co');
+    expect(retrieved.default_tax_rate.toString()).toBe("15");
+
+    // Test Update
+    await upsertProfile({ ...profileData, company_name: 'Updated Co' });
+    const updated = await getProfileByEmail(email);
+    expect(updated.company_name).toBe('Updated Co');
   });
 });
