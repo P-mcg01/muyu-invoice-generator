@@ -110,7 +110,7 @@ async function saveInvoice(invoiceData) {
 			taxRate,
 			subtotal,
 			total,
-			isTest ? JSON.stringify(items) : items,
+			JSON.stringify(items),
 			owner_email,
 		],
 	);
