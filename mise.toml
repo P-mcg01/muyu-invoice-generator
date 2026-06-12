@@ -1,10 +1,15 @@
 [tools]
 node = "24.16.0"
 trivy = "0.71.0"
+packer = "1.10.3"
+shellcheck = "0.10.0"
+awscli = "2.35.1"
 
 [env]
 DATABASE_URL = "postgres://invoice_user:invoice_pass@localhost:5432/invoice_db"
 PORT = "3000"
+AWS_REGION = "us-east-1"
+AWS_PAGER = ""
 
 [tasks.start]
 description = "Install dependencies and start the application"
