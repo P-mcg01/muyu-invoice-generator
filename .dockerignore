@@ -1,15 +1,28 @@
+# Git metadata
 .git
 .github
-node_modules
-coverage
-
-tests/
-
 .gitignore
+
+# Dependencies
+node_modules
+
+# Test/coverage
+coverage
+tests/
+test/
+
+# CI / tooling
+provisioning/
+scripts/
+
+# Logs
+npm-debug.log*
+
+# Env files
+.env
+.env.*
+
+# Docs / local dev files
 *.md
 docker-compose.yml
 mise.toml
-
-.env
-.env.*
-npm-debug.log*

@@ -1,4 +1,12 @@
 services:
+  app:
+    image: app:slim
+    environment:
+      DATABASE_URL: "postgres://invoice_user:invoice_pass@db:5432/invoice_db"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+
   db:
     image: postgres:16-alpine
     environment:
