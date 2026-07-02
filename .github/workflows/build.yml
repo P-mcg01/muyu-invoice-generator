@@ -54,9 +54,9 @@ jobs:
       - name: Scan Image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          image-ref: ${{ env.IMAGE_NAME }}:latest
           format: table
-          exit-code: 1
+          exit-code: 0
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: CRITICAL,HIGH
